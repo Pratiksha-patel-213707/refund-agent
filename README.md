@@ -1,241 +1,430 @@
-# ShopEase Refund Processing Agent
+# ARIA — AI Refund Support Agent
 
-ARIA is a purpose-built refund-processing agent for e-commerce support. It is not a general customer support chatbot. Its primary job is to approve or deny refund, return, exchange, and refund eligibility requests by validating customer and order data against the refund policy.
+ARIA is a policy-aware customer-support application that evaluates e-commerce refund, return, exchange, and eligibility requests. It combines a React customer chat, browser voice support, a FastAPI API, a LangGraph workflow, Gemini language understanding, a 15-customer mock CRM, a strict refund policy, and an administrator audit dashboard.
 
-## Root Cause Analysis
+> This is a demonstration application. Refund decisions are recorded and displayed, but no real payment provider or production CRM is modified.
 
-The previous implementation had several assignment gaps:
+## Features
 
-- The workflow was collapsed into a broad validation/decision path, so it did not clearly enforce Intent Detection -> Information Collection -> CRM Lookup -> Verification -> Policy Validation -> Decision.
-- Some responses could be generated without completing all required validation, which made assumption-based reasoning possible.
-- Intent, reason, and product interpretation were previously handled with local keyword lists. The current implementation delegates that language understanding to the LLM.
-- Conversation memory existed, but incoming frontend history and backend session state could duplicate or lose follow-up intent.
-- Reasoning logs focused mostly on tool calls and final responses, leaving intent, validation, policy rule, and final decision less visible.
-- The policy engine used the machine clock. The bundled 2024 CRM data became permanently outside the refund window when run in later years, so the evaluation date is now configurable.
+- Multi-turn refund conversations with session memory
+- Explicit LangGraph workflow with conditional exits
+- Gemini-powered intent extraction, product verification, policy evaluation, and response drafting
+- Tool-based CRM and order lookup
+- Strict policy grounding with policy-rule citations in decisions
+- Approved, denied, clarification, mismatch, and out-of-scope flows
+- Structured administrator audit events (not private chain-of-thought)
+- Browser microphone input and spoken agent responses
+- Spoken order-number normalization such as `1188`, “one one eight eight,” and “double five double four”
+- Gemini retry, fallback-model, fenced-JSON, and malformed-suffix recovery
+- Mock CRM with 15 customer profiles and a versioned refund-policy document
 
-## Architecture Review
+## Architecture
 
-Backend:
+```mermaid
+flowchart LR
+    Customer[Customer] -->|Text or microphone| UI[React Chat UI]
+    UI -->|POST /api/chat| API[FastAPI API]
+    API --> Graph[LangGraph Agent]
 
-- `backend/app/agent.py` owns the LangGraph workflow and session memory.
-- `backend/app/tools.py` owns CRM and policy tools. CRM lookup is factual; policy eligibility is evaluated by the LLM against the strict policy document and CRM facts.
-- `backend/app/api.py` exposes `/api/chat`, `/api/customers`, and `/api/health`.
-- `data/crm_database.json` is the mock CRM.
-- `data/refund_policy.txt` is the policy source.
+    Graph --> Intent[Intent Detection]
+    Intent --> Info[Information Collection]
+    Info --> CRMNode[CRM Lookup]
+    CRMNode --> Verify[Customer / Order / Product Verification]
+    Verify --> Policy[Policy Validation]
+    Policy --> Decision[Approve or Deny]
+    Decision --> Response[Customer Response]
 
-Frontend:
+    Graph <-->|Structured JSON| Gemini[Gemini API]
+    CRMNode --> Tools[Agent Tools]
+    Policy --> Tools
+    Tools --> CRM[(CRM JSON — 15 Profiles)]
+    Tools --> PolicyDoc[(Strict Refund Policy)]
 
-- `frontend/src/App.js` provides the chat UI and admin reasoning log.
-- The admin log now displays intent, information collection, tool calls, tool outputs, validation results, policy rule, and final decision.
+    Graph --> Audit[Structured Audit Events]
+    Audit --> Admin[Admin Dashboard]
+    Response --> UI
 
-## Updated LangGraph Workflow
-
-```text
-Intent Detection
-  -> Information Collection
-  -> CRM Lookup
-  -> Verification
-  -> Policy Validation
-  -> Decision
-  -> Respond
+    UI --> Speech[Browser Speech Recognition / Synthesis]
 ```
 
-Conditional exits:
+### Agent workflow
 
-- Out-of-scope intent -> exact out-of-scope response.
-- Missing order/email or refund reason -> ask for only the missing details.
-- CRM/customer/order/product mismatch -> ask for clarification before policy validation.
-- Verified request -> call policy tool, then produce APPROVED or DENIED.
-
-## Supported Intents
-
-- Refund Request
-- Return Request
-- Exchange Request
-- Refund Eligibility Check
-
-Out-of-scope response:
-
-```text
-I'm a refund support assistant and can help with refund, return, exchange, and refund eligibility requests. Please provide your order details and refund-related issue.
+```mermaid
+flowchart TD
+    A[Intent Detection] --> B[Information Collection]
+    B -->|Missing order ID or reason| G[Ask for Missing Information]
+    B -->|Complete| C[CRM Lookup]
+    C --> D[Verification]
+    D -->|Customer, order, or product mismatch| H[Ask for Clarification]
+    D -->|Verified| E[Policy Validation]
+    E --> F[Final Decision]
+    F --> I[Respond]
+    G --> I
+    H --> I
+    A -->|Small talk or out of scope| I
+    I --> J((End))
 ```
 
-## File-by-File Fixes
+### Request sequence
 
-### `backend/app/agent.py`
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as React UI
+    participant API as FastAPI
+    participant Agent as LangGraph Agent
+    participant LLM as Gemini
+    participant Tools as CRM / Policy Tools
+    participant Admin as Admin Dashboard
 
-- Replaced broad agent logic with explicit LangGraph nodes:
-  - `intent_detection`
-  - `information_collection`
-  - `crm_lookup`
-  - `verification`
-  - `policy_validation`
-  - `decision`
-  - `respond`
-- Added durable session context for:
-  - customer email
-  - order ID
-  - refund reason
-  - reported product
-  - CRM customer/order results
-  - policy result
-  - decision status
-- Added follow-up handling so a user can say:
-  - "My item arrived damaged."
-  - "rohan.mehta@email.com ORD-2024-9102"
-  - "So is it refundable?"
-- Added strict out-of-scope handling through LLM request understanding.
-- Added LLM-based product mismatch detection before policy validation.
-- Ensured final decisions are based on CRM tool outputs plus the policy-evaluation tool, not unsupported chat responses.
-- Added structured reasoning log events.
-
-### `backend/app/tools.py`
-
-- Added configurable policy evaluation date via settings.
-- Reworked `check_refund_eligibility` so Gemini evaluates the natural-language customer claim against `refund_policy.txt` and the CRM order/customer facts.
-- Policy decisions return `eligible`, `decision`, `policy_rule`, `detail`, refund amount, timeline, and evidence requirements where applicable.
-
-### `backend/app/config.py`
-
-- Added `POLICY_EVALUATION_DATE`, defaulting to `2024-06-18` for the bundled CRM dataset.
-- You can override it with an environment variable.
-
-### `frontend/src/App.js`
-
-- Expanded the admin reasoning log renderer to show:
-  - Intent Detection
-  - Information Collection
-  - Tool Calls
-  - Tool Outputs
-  - Validation Results
-  - Final Decision
-  - Agent Response
-
-## Reasoning Log Schema
-
-Each chat response includes a `reasoning_log` array with events such as:
-
-- `intent`
-- `information_collection`
-- `tool_call`
-- `tool_result`
-- `validation_results`
-- `final_decision`
-- `agent_response`
-
-This makes it clear which tools executed, what they returned, which validations passed, which policy rule triggered, and why the final decision was APPROVED or DENIED.
-
-## Example Conversations
-
-### 1. Missing Information
-
-User:
-
-```text
-My item arrived damaged.
+    User->>UI: Refund request (text or voice)
+    UI->>API: POST /api/chat
+    API->>Agent: Messages + session_id
+    Agent->>LLM: Extract intent and required fields
+    Agent->>Tools: Look up customer and order
+    Tools-->>Agent: Authoritative CRM facts
+    Agent->>LLM: Verify claim and evaluate strict policy
+    LLM-->>Agent: Structured decision
+    Agent-->>API: Response + context + audit events
+    API-->>UI: JSON response
+    UI-->>User: Decision and optional spoken reply
+    UI->>Admin: Render structured audit events
 ```
 
-Agent:
+## Technology stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Lucide React, browser Web Speech APIs |
+| Backend | Python, FastAPI, Uvicorn, Pydantic |
+| Agent orchestration | LangGraph |
+| LLM integration | LangChain Google GenAI, Gemini |
+| Data | JSON mock CRM and plain-text policy |
+| Testing | pytest |
+
+## Project structure
 
 ```text
-Please provide the order ID or the email used for the purchase so I can verify the refund request.
+refund-agent/
+├── backend/
+│   ├── .env.example          # Safe configuration template
+│   ├── main.py               # Uvicorn entry point
+│   ├── test_order_ids.py     # Order normalization/lookup tests
+│   └── app/
+│       ├── agent.py          # LangGraph nodes, edges, memory and audit events
+│       ├── api.py            # /api/chat, /api/customers and /api/health
+│       ├── config.py         # Environment and data-path configuration
+│       ├── data.py           # Loads CRM and refund policy
+│       ├── llm.py            # Gemini client, fallback and JSON recovery
+│       ├── main.py           # FastAPI application and CORS
+│       ├── order_ids.py      # Spoken/abbreviated order-ID normalization
+│       ├── prompts.py        # Structured LLM prompts
+│       ├── schemas.py        # API request models
+│       └── tools.py          # CRM and policy tools
+├── data/
+│   ├── crm_database.json     # 15 mock customer profiles and orders
+│   └── refund_policy.txt     # Strict ShopEase refund policy
+├── frontend/
+│   ├── public/
+│   ├── src/App.js            # Chat, voice and admin dashboard
+│   ├── package.json
+│   └── package-lock.json
+├── .gitignore
+├── requirements.txt
+└── README.md
 ```
 
-### 2. Follow-Up Understanding
+## Prerequisites
 
-User:
+- Python 3.11 or 3.12
+- Node.js 18 or 20 LTS
+- npm
+- A Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Chrome or Edge for microphone input (recommended)
 
-```text
-My item arrived damaged.
+## Quick start
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Pratiksha-patel-213707/refund-agent.git
+cd refund-agent
 ```
 
-Agent:
+### 2. Create and activate a Python environment
 
-```text
-Please provide the order ID or the email used for the purchase so I can verify the refund request.
+Windows PowerShell:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-User:
+macOS/Linux:
 
-```text
-rohan.mehta@email.com ORD-2024-9102
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Agent:
+### 3. Configure Gemini
 
-```text
-DENIED: Order ORD-2024-9102 for Nike Air Max 270 is not eligible for a refund. Policy rule used: Section 1 - Eligibility Window. Delivery was 36 days ago. Window for footwear is 7 days (Section 1).
+Windows PowerShell:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
 ```
 
-User:
+macOS/Linux:
 
-```text
-So is it refundable?
+```bash
+cp backend/.env.example backend/.env
 ```
 
-Agent uses stored state and returns the same decision directly.
+Edit `backend/.env`:
 
-### 3. Product Mismatch
-
-User:
-
-```text
-My damaged headphones are on order ORD-2024-9102 rohan.mehta@email.com
+```env
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+GEMINI_MODEL="gemini-3.5-flash"
+GEMINI_FALLBACK_MODEL="gemini-2.5-flash-lite"
+GEMINI_MAX_OUTPUT_TOKENS="4096"
+GEMINI_THINKING_BUDGET="0"
+POLICY_EVALUATION_DATE="2024-06-18"
 ```
 
-Agent:
+`backend/.env` is ignored by Git. Never commit or place a real API key in frontend code.
 
-```text
-The product you mentioned does not match the CRM order. You mentioned headphones, but order ORD-2024-9102 is for Nike Air Max 270. Please confirm the correct product or order ID.
-```
+`POLICY_EVALUATION_DATE` is intentionally pinned because the bundled CRM represents a 2024 demonstration dataset. Changing it to the current date will place most sample orders outside their policy windows.
 
-### 4. Approved Refund
+### 4. Start the backend
 
-User:
-
-```text
-I need a refund for ORD-2024-5544. My smartwatch arrived defective.
-```
-
-Agent:
-
-```text
-APPROVED: Order ORD-2024-5544 for Fossil Gen 6 Smartwatch is eligible for a refund. Policy rule used: Section 2 - Valid Refund Reasons. Refund approved for 'defective'. Gold customer - standard 3-5 day processing. Refund amount: 18995.0. Timeline: 5-7 business days. Evidence is required within 24 hours.
-```
-
-### 5. Out-of-Scope
-
-User:
-
-```text
-What is the weather today?
-```
-
-Agent:
-
-```text
-I'm a refund support assistant and can help with refund, return, exchange, and refund eligibility requests. Please provide your order details and refund-related issue.
-```
-
-## Running Locally
-
-Backend:
+From the repository root:
 
 ```bash
 cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-Create `backend/.env` from `backend/.env.example` and set:
+Verify it at:
 
-```bash
-GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
-GEMINI_MODEL="gemini-1.5-flash"
-```
+- Health: <http://localhost:8000/api/health>
+- Interactive API docs: <http://localhost:8000/docs>
 
-Frontend:
+### 5. Start the frontend
+
+Open another terminal:
 
 ```bash
 cd frontend
+npm ci
 npm start
 ```
+
+Open <http://localhost:3000>.
+
+## Run the tests
+
+Activate the Python environment, then run from the repository root:
+
+```bash
+cd backend
+pytest -q
+```
+
+The included tests cover abbreviated and voice-style order numbers, including:
+
+- `1188` → `ORD-2024-1188`
+- “order five five four four” → `ORD-2024-5544`
+- “order double five double four” → `ORD-2024-5544`
+- Unique four-digit CRM suffix lookup
+
+Build-check the frontend with:
+
+```bash
+cd frontend
+npm run build
+```
+
+## Demo scenarios
+
+The sample CRM and policy evaluation date make these cases reproducible.
+
+### Approved refund
+
+```text
+I need a refund for ORD-2024-5544. My Fossil smartwatch arrived defective.
+```
+
+Expected: approved because the defective electronics claim is inside the three-day window. Photo/video evidence is required within 24 hours.
+
+### Voice and multi-turn order ID
+
+```text
+User: I want a refund because my smartwatch arrived defective.
+Agent: What is the order ID?
+User: Five five four four.
+```
+
+Expected: the agent resolves the spoken suffix to `ORD-2024-5544` and continues.
+
+### Policy denial / “holding the line”
+
+```text
+I want a refund for ORD-2024-1188 because I changed my mind about the Levi's jeans.
+```
+
+Expected: denied because the order is outside the seven-day clothing window and buyer’s remorse is not an approved reason.
+
+### Product mismatch
+
+```text
+My damaged headphones are on order ORD-2024-9102.
+```
+
+Expected: clarification request because the CRM product is Nike Air Max footwear, not headphones. Policy evaluation does not run until the mismatch is resolved.
+
+### Out of scope
+
+```text
+What is the weather today?
+```
+
+Expected: ARIA explains that it only handles refund-related support.
+
+## Voice support
+
+Voice uses free browser APIs; it does not require a voice API key.
+
+- Speech-to-text: `SpeechRecognition` / `webkitSpeechRecognition`
+- Text-to-speech: `speechSynthesis`
+- Recommended browsers: current Chrome or Edge
+- Microphone access requires `localhost` or HTTPS
+
+Click the microphone button, approve browser permission, speak, and wait for the transcript to appear before sending. The backend normalizes abbreviated and spoken order numbers before intent extraction and confirms the authoritative full ID through the CRM.
+
+## API
+
+### `POST /api/chat`
+
+Request:
+
+```json
+{
+  "session_id": "demo-session",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Refund ORD-2024-5544 because the smartwatch is defective"
+    }
+  ]
+}
+```
+
+Example with curl:
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"demo-session","messages":[{"role":"user","content":"Refund ORD-2024-5544 because the smartwatch is defective"}]}'
+```
+
+Response fields:
+
+- `response`: customer-facing answer
+- `context`: current session facts and decision state
+- `reasoning_log`: structured audit events
+
+### Other endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/chat` | Run or continue an agent conversation |
+| `GET` | `/api/customers` | List safe CRM profile summaries |
+| `GET` | `/api/health` | Check provider, model, fallback and API-key configuration |
+| `GET` | `/docs` | Swagger/OpenAPI interface |
+
+## Tool orchestration
+
+| Tool | Responsibility |
+|---|---|
+| `lookup_customer` | Find customer profile and calculate refund-risk indicators |
+| `get_order_details` | Resolve full or abbreviated IDs and return authoritative order facts |
+| `get_refund_policy` | Return the complete policy or a requested section |
+| `check_refund_eligibility` | Evaluate verified CRM facts and the claim against policy |
+| `process_refund` | Construct an auditable demonstration decision record |
+
+## Audit events
+
+Every agent response includes structured events such as:
+
+- `intent`
+- `information_collection`
+- `tool_call`
+- `tool_result`
+- `llm_product_verification`
+- `validation_results`
+- `final_decision`
+- `agent_response`
+- `llm_error`
+
+The admin dashboard presents these events for debugging and review. They are concise operational evidence, not hidden model chain-of-thought.
+
+## Reliability and safety
+
+- Requests cannot reach policy validation until required information is collected.
+- Customer, order and product mismatches stop the workflow for clarification.
+- CRM lookups are tool-based; the model cannot invent an order record.
+- Policy prompts prohibit unsupported facts and goodwill exceptions.
+- Gemini runs in JSON mode with temperature zero.
+- Transient provider/model failures can use a fallback model.
+- Fenced JSON and malformed trailing model text are handled conservatively.
+- Unrecoverable LLM errors are logged by stage and fail closed.
+- API keys remain in the backend environment only.
+
+## Troubleshooting
+
+### Health says `api_key_configured: false`
+
+Confirm `backend/.env` exists, contains `GEMINI_API_KEY`, and restart Uvicorn completely.
+
+### Gemini authentication or quota error
+
+Run the health endpoint, verify the selected model is available to your key, check quota in Google AI Studio, or change `GEMINI_FALLBACK_MODEL`.
+
+### PyTorch warning
+
+The optional Transformers package may report that PyTorch is unavailable. ARIA calls Gemini remotely and does not require local PyTorch models, so this warning is harmless.
+
+### Microphone does not work
+
+- Use Chrome or Edge.
+- Open the application through `http://localhost:3000` or HTTPS.
+- Click the lock/site-controls icon and allow Microphone.
+- Confirm Windows/macOS grants microphone access to the browser.
+- Check the visible error below the chat input.
+
+### Frontend cannot connect
+
+Confirm Uvicorn is running on port `8000`. The React development server proxies API calls to `http://localhost:8000`.
+
+### Port already in use
+
+Stop the existing process or start the service on another port. If the backend port changes, set `REACT_APP_API_URL` for the frontend.
+
+## Data and limitations
+
+- CRM and policy data are loaded from local files at startup.
+- Session memory is stored in process memory and resets when the backend restarts.
+- The application does not authenticate customers or administrators.
+- No real payment transaction is executed.
+- Browser voice recognition availability depends on the browser and platform.
+- Production use would require authentication, persistent storage, encrypted audit retention, rate limiting, observability, human-approval controls and payment-provider integration.
+
+## Repository
+
+Public source: <https://github.com/Pratiksha-patel-213707/refund-agent>
+
