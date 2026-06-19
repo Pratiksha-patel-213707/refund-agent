@@ -1,0 +1,364 @@
+{
+  "customers": [
+    {
+      "id": "C001",
+      "name": "Aanya Sharma",
+      "email": "aanya.sharma@email.com",
+      "phone": "+91-9876543210",
+      "account_created": "2022-03-15",
+      "tier": "Gold",
+      "total_orders": 47,
+      "total_spent": 52340.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-8821",
+          "product": "Sony WH-1000XM5 Headphones",
+          "amount": 24999.00,
+          "purchase_date": "2024-05-20",
+          "delivery_date": "2024-05-23",
+          "status": "delivered",
+          "payment_method": "credit_card",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C002",
+      "name": "Rohan Mehta",
+      "email": "rohan.mehta@email.com",
+      "phone": "+91-9845231067",
+      "account_created": "2023-01-10",
+      "tier": "Silver",
+      "total_orders": 12,
+      "total_spent": 8750.00,
+      "refund_history": [
+        {"order_id": "ORD-2023-4412", "amount": 1200.00, "reason": "wrong_item", "date": "2023-06-01", "status": "approved"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-9102",
+          "product": "Nike Air Max 270",
+          "amount": 7499.00,
+          "purchase_date": "2024-05-10",
+          "delivery_date": "2024-05-13",
+          "status": "delivered",
+          "payment_method": "upi",
+          "category": "footwear"
+        }
+      ]
+    },
+    {
+      "id": "C003",
+      "name": "Priya Nair",
+      "email": "priya.nair@email.com",
+      "phone": "+91-9912345678",
+      "account_created": "2021-07-22",
+      "tier": "Platinum",
+      "total_orders": 89,
+      "total_spent": 145000.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-7733",
+          "product": "MacBook Air M3",
+          "amount": 114900.00,
+          "purchase_date": "2024-06-01",
+          "delivery_date": "2024-06-03",
+          "status": "delivered",
+          "payment_method": "emi",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C004",
+      "name": "Karan Patel",
+      "email": "karan.patel@email.com",
+      "phone": "+91-9876012345",
+      "account_created": "2023-11-05",
+      "tier": "Bronze",
+      "total_orders": 3,
+      "total_spent": 2100.00,
+      "refund_history": [
+        {"order_id": "ORD-2024-1001", "amount": 799.00, "reason": "defective", "date": "2024-01-15", "status": "approved"},
+        {"order_id": "ORD-2024-2234", "amount": 450.00, "reason": "changed_mind", "date": "2024-03-02", "status": "approved"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-5566",
+          "product": "Boat Airdopes 141",
+          "amount": 1299.00,
+          "purchase_date": "2024-06-10",
+          "delivery_date": "2024-06-12",
+          "status": "delivered",
+          "payment_method": "debit_card",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C005",
+      "name": "Sneha Reddy",
+      "email": "sneha.reddy@email.com",
+      "phone": "+91-9988776655",
+      "account_created": "2022-09-30",
+      "tier": "Gold",
+      "total_orders": 34,
+      "total_spent": 41200.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-6644",
+          "product": "Samsung 55\" 4K TV",
+          "amount": 45999.00,
+          "purchase_date": "2024-06-05",
+          "delivery_date": "2024-06-08",
+          "status": "delivered",
+          "payment_method": "credit_card",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C006",
+      "name": "Arjun Kapoor",
+      "email": "arjun.kapoor@email.com",
+      "phone": "+91-9123456789",
+      "account_created": "2024-02-14",
+      "tier": "Bronze",
+      "total_orders": 2,
+      "total_spent": 3200.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-4455",
+          "product": "Wildcraft Backpack 45L",
+          "amount": 2499.00,
+          "purchase_date": "2024-05-01",
+          "delivery_date": "2024-05-04",
+          "status": "delivered",
+          "payment_method": "cod",
+          "category": "bags"
+        }
+      ]
+    },
+    {
+      "id": "C007",
+      "name": "Meera Joshi",
+      "email": "meera.joshi@email.com",
+      "phone": "+91-9765432109",
+      "account_created": "2020-12-01",
+      "tier": "Platinum",
+      "total_orders": 120,
+      "total_spent": 280000.00,
+      "refund_history": [
+        {"order_id": "ORD-2023-8899", "amount": 5500.00, "reason": "damaged_in_transit", "date": "2023-09-10", "status": "approved"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-3322",
+          "product": "Dyson V15 Vacuum Cleaner",
+          "amount": 52900.00,
+          "purchase_date": "2024-06-12",
+          "delivery_date": "2024-06-14",
+          "status": "delivered",
+          "payment_method": "credit_card",
+          "category": "appliances"
+        }
+      ]
+    },
+    {
+      "id": "C008",
+      "name": "Vikram Singh",
+      "email": "vikram.singh@email.com",
+      "phone": "+91-9654321098",
+      "account_created": "2023-05-20",
+      "tier": "Silver",
+      "total_orders": 18,
+      "total_spent": 22000.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-1188",
+          "product": "Levi's 511 Slim Jeans (3 Pack)",
+          "amount": 5997.00,
+          "purchase_date": "2024-04-15",
+          "delivery_date": "2024-04-18",
+          "status": "delivered",
+          "payment_method": "upi",
+          "category": "clothing"
+        }
+      ]
+    },
+    {
+      "id": "C009",
+      "name": "Divya Menon",
+      "email": "divya.menon@email.com",
+      "phone": "+91-9543210987",
+      "account_created": "2022-06-18",
+      "tier": "Gold",
+      "total_orders": 29,
+      "total_spent": 38500.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-7788",
+          "product": "Nykaa Skin Care Kit",
+          "amount": 3499.00,
+          "purchase_date": "2024-06-14",
+          "delivery_date": "2024-06-16",
+          "status": "delivered",
+          "payment_method": "debit_card",
+          "category": "beauty"
+        }
+      ]
+    },
+    {
+      "id": "C010",
+      "name": "Rahul Gupta",
+      "email": "rahul.gupta@email.com",
+      "phone": "+91-9432109876",
+      "account_created": "2024-04-01",
+      "tier": "Bronze",
+      "total_orders": 1,
+      "total_spent": 899.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-9900",
+          "product": "Prestige Electric Kettle",
+          "amount": 899.00,
+          "purchase_date": "2024-06-13",
+          "delivery_date": "2024-06-15",
+          "status": "delivered",
+          "payment_method": "upi",
+          "category": "appliances"
+        }
+      ]
+    },
+    {
+      "id": "C011",
+      "name": "Kavitha Iyer",
+      "email": "kavitha.iyer@email.com",
+      "phone": "+91-9321098765",
+      "account_created": "2021-02-28",
+      "tier": "Gold",
+      "total_orders": 55,
+      "total_spent": 67000.00,
+      "refund_history": [
+        {"order_id": "ORD-2022-3344", "amount": 12000.00, "reason": "defective", "date": "2022-08-20", "status": "approved"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-5544",
+          "product": "Fossil Gen 6 Smartwatch",
+          "amount": 18995.00,
+          "purchase_date": "2024-06-17",
+          "delivery_date": "2024-06-18",
+          "status": "delivered",
+          "payment_method": "credit_card",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C012",
+      "name": "Ankit Tiwari",
+      "email": "ankit.tiwari@email.com",
+      "phone": "+91-9210987654",
+      "account_created": "2023-08-12",
+      "tier": "Silver",
+      "total_orders": 9,
+      "total_spent": 11200.00,
+      "refund_history": [
+        {"order_id": "ORD-2023-6677", "amount": 3200.00, "reason": "changed_mind", "date": "2023-10-05", "status": "approved"},
+        {"order_id": "ORD-2024-0012", "amount": 1800.00, "reason": "not_as_described", "date": "2024-02-14", "status": "approved"},
+        {"order_id": "ORD-2024-1122", "amount": 2100.00, "reason": "changed_mind", "date": "2024-04-20", "status": "denied"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-8833",
+          "product": "JBL Charge 5 Speaker",
+          "amount": 9999.00,
+          "purchase_date": "2024-06-01",
+          "delivery_date": "2024-06-04",
+          "status": "delivered",
+          "payment_method": "emi",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C013",
+      "name": "Sunita Verma",
+      "email": "sunita.verma@email.com",
+      "phone": "+91-9109876543",
+      "account_created": "2022-11-11",
+      "tier": "Silver",
+      "total_orders": 22,
+      "total_spent": 28900.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-2211",
+          "product": "Yoga Mat Premium + Blocks Set",
+          "amount": 2199.00,
+          "purchase_date": "2024-05-25",
+          "delivery_date": "2024-05-28",
+          "status": "delivered",
+          "payment_method": "upi",
+          "category": "sports"
+        }
+      ]
+    },
+    {
+      "id": "C014",
+      "name": "Deepak Choudhary",
+      "email": "deepak.choudhary@email.com",
+      "phone": "+91-9098765432",
+      "account_created": "2020-05-16",
+      "tier": "Platinum",
+      "total_orders": 95,
+      "total_spent": 195000.00,
+      "refund_history": [],
+      "orders": [
+        {
+          "order_id": "ORD-2024-6611",
+          "product": "Apple iPad Pro 11\"",
+          "amount": 89900.00,
+          "purchase_date": "2024-06-10",
+          "delivery_date": "2024-06-12",
+          "status": "delivered",
+          "payment_method": "credit_card",
+          "category": "electronics"
+        }
+      ]
+    },
+    {
+      "id": "C015",
+      "name": "Pooja Agarwal",
+      "email": "pooja.agarwal@email.com",
+      "phone": "+91-8987654321",
+      "account_created": "2023-03-07",
+      "tier": "Bronze",
+      "total_orders": 5,
+      "total_spent": 4500.00,
+      "refund_history": [
+        {"order_id": "ORD-2023-9988", "amount": 999.00, "reason": "wrong_item", "date": "2023-07-11", "status": "approved"}
+      ],
+      "orders": [
+        {
+          "order_id": "ORD-2024-3399",
+          "product": "Milton Water Bottle Set",
+          "amount": 599.00,
+          "purchase_date": "2024-06-16",
+          "delivery_date": "2024-06-18",
+          "status": "delivered",
+          "payment_method": "cod",
+          "category": "kitchen"
+        }
+      ]
+    }
+  ]
+}
